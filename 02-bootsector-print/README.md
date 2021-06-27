@@ -42,7 +42,15 @@ times 510 - ($-$$) db 0
 dw 0xaa55 
 ```
 
-你可以通过`xxd file.bin`这个命令来查看文件的十六进制表示。
+代码解释：
+```
+mov al, 'l'
+int 0x10
+int 0x10 ; 'l' is still on al, remember?
+```
+这部分代码是这个样子的原因是因为要重复显示字符`l`，而且之前`al`寄存器里就已经存放了`l`这个值，所以不需要再进行一遍对`al`寄存器的赋值，从这里也可以看出来：调用`int 0x10`就会显示一次`al`寄存器里面的值。
+
+你可以在编译完成之后通过`xxd file.bin`这个命令来查看文件的十六进制表示。
 
 编译：
 `nasm -fbin boot_sect_hello.asm -o boot_sect_hello.bin`
