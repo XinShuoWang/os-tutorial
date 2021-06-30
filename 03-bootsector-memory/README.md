@@ -1,63 +1,51 @@
-*Concepts you may want to Google beforehand: memory offsets, pointers*
+*一些你可能需要提前了解的名词：内存偏移、指针*
 
-**Goal: Learn how the computer memory is organized**
+**目标：学习计算机内存的组织方式**
 
 Please open page 14 [of this document](
 http://www.cs.bham.ac.uk/~exr/lectures/opsys/10_11/lectures/os-dev.pdf)<sup>1</sup>
 and look at the figure with the memory layout.
+请仔细查看下图所描述的内存布局：
+![内存布局](memory_layout.png)
 
-The only goal of this lesson is to learn where the boot sector is stored
+这个教程的唯一目的就是要让大家了解启动扇区在内存中的位置。
 
-I could just bluntly tell you that the BIOS places it at `0x7C00` and
-get it done with, but an example with wrong solutions will make things clearer.
+我可以直截了当地告诉你，BIOS将启动分区（boot sector）放在`0x7C00`位置并执行这段程序，但是如果多尝试几种可能将使事情更清楚。 
 
-We want to print an X on screen. We will try 4 different strategies
-and see which ones work and why.
+我们想要把X打在屏幕上，我们猜测4种可能的内存布局，然后做实验看哪个可以工作。
 
-**Open the file `boot_sect_memory.asm`**
+**打开`boot_sect_memory.asm`文件**
 
-First, we will define the X as data, with a label:
+首先，我们要定义要打印的数据"X"并用label来标识它：
 ```nasm
 the_secret:
     db "X"
 ```
 
-Then we will try to access `the_secret` in many different ways:
+我们将使用如下的4种方式来访问`the_secret`数据：
 
 1. `mov al, the_secret`
 2. `mov al, [the_secret]`
 3. `mov al, the_secret + 0x7C00`
-4. `mov al, 2d + 0x7C00`, where `2d` is the actual position of the 'X' byte in the binary
+4. `mov al, 2d + 0x7C00`, `2d`是'X'数据存储在二进制文件中的位置。
 
-Take a look at the code and read the comments.
 
-Compile and run the code. You should see a string similar to `1[2¢3X4X`, where
-the bytes following 1 and 2 are just random garbage.
+编译运行`boot_sect_memory.asm`这个文件你将会看到打印出了类似于`1[2¢3X4X`的东西，在字符"1"和字符"2"后面打印的是寄存器中的随机值。
 
-If you add or remove instructions, remember to compute the new offset of the X
-by counting the bytes, and replace `0x2d` with the new one.
+如果你增删了文件中的部分代码，你需要将`0x2d`更换为修改后的数据'X'在二进制文件的位置
 
-Please don't continue onto the next section unless you have 100% understood
-the boot sector offset and memory addressing.
-
+请一定要将这章的内容完全理解再继续往下学！
 
 The global offset
 -----------------
 
-Now, since offsetting `0x7c00` everywhere is very inconvenient, assemblers let
-us define a "global offset" for every memory location, with the `org` command:
+现在，由于每处都要设置偏移`0x7c00`非常不方便，汇编器给我们提供了`org`命令，这样的话就可以为每个内存位置定义一个"global offset":  
 
 ```nasm
 [org 0x7c00]
 ```
 
-Go ahead and **open `boot_sect_memory_org.asm`** and you will see the canonical
-way to print data with the boot sector, which is now attempt 2. Compile the code
-and run it, and you will see how the `org` command affects each previous solution.
+**打开`boot_sect_memory_org.asm`文件**，您将看到`org`命令如何影响内存布局。  
 
-Read the comments for a full explanation of the changes with and without `org`
-
+请一定要仔细查看两个文件里面的注释。  
 -----
-
-[1] This whole tutorial is heavily inspired on that document. Please read the
-root-level README for more information on that.
