@@ -45,7 +45,13 @@ The global offset
 [org 0x7c00]
 ```
 
-**打开`boot_sect_memory_org.asm`文件**，您将看到`org`命令如何影响内存布局。  
+**打开`boot_sect_memory_org.asm`文件**，您将看到`org`命令如何影响内存布局。
+
+`org`是一条可以让你设置全局内存起始地址的命令，所有的程序里的地址都会主动加上org的值。
+1. `mov al, the_secret`，还是无法打印，因为打印的是the_secret的指针，而不是指针指向的的内存里面的内容。
+2. `mov al, [the_secret]`，可以打印，`org`设置了global offset，打印the_secret指向的指针的内容。
+3. `mov al, the_secret + 0x7C00`，不可以打印，因为已经设置了global offset，要是再加上了`0x7C00`就多了。
+4. `mov al, 2d + 0x7C00`，可以打印，绝对地址总是不变。
 
 请一定要仔细查看两个文件里面的注释。  
 -----
