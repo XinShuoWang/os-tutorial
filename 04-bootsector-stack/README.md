@@ -1,15 +1,13 @@
-*Concepts you may want to Google beforehand: stack*
+*你可能需要事先查询的概念：stack*
 
-**Goal: Learn how to use the stack**
+**目标：学会使用stack**
 
-The usage of the stack is important, so we'll write yet another boot sector
-with an example.
+stack的使用是非常重要的，所以我们会重新写一个boot sector。
 
-Remember that the `bp` register stores the base address (i.e. bottom) of the stack,
-and `sp` stores the top, and that the stack grows downwards from `bp` (i.e. `sp` gets
-decremented)
+`bp`存放的是stack底部的地址，`sp`存放的stack顶部的地址。堆栈从`bp`开始向下减少，`sp`会递减。
 
-This lesson is quite straightforward, so jump ahead to the code.
+要注意的是：只能访问栈顶的数据，非栈顶的数据是无法访问的。
 
-I suggest that you try accessing in-stack memory addresses by yourself, 
-at different points in the code, and see what happens.
+`pop`命令需要紧跟着寄存器，例如`pop bx`代表将stack中的数据弹出一个到`bx`中。
+
+这个教程很简单，可以直接去看代码。
