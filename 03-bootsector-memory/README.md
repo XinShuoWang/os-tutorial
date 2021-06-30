@@ -24,10 +24,10 @@ the_secret:
 
 我们将使用如下的4种方式来访问`the_secret`数据：
 
-1. `mov al, the_secret`
-2. `mov al, [the_secret]`
-3. `mov al, the_secret + 0x7C00`
-4. `mov al, 2d + 0x7C00`, `2d`是'X'数据存储在二进制文件中的位置。
+1. `mov al, the_secret`，无法打印，因为打印的是the_secret的指针，而不是指针指向的的内存里面的内容。
+2. `mov al, [the_secret]`，无法打印，因为没有加上全局偏移，打印the_secret指向的指针的内容。
+3. `mov al, the_secret + 0x7C00`，可以打印，因为加上了global offset `0x7C00`。
+4. `mov al, 2d + 0x7C00`，可以打印， `2d`是'X'数据存储在二进制文件中的位置。
 
 
 编译运行`boot_sect_memory.asm`这个文件你将会看到打印出了类似于`1[2¢3X4X`的东西，在字符"1"和字符"2"后面打印的是寄存器中的随机值。
