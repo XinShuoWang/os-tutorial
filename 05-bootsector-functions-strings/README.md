@@ -1,37 +1,29 @@
-*Concepts you may want to Google beforehand: control structures,
-function calling, strings*
+*一些你可能需要提前查询的概念：控制结构、函数调用、字符串*
 
-**Goal: Learn how to code basic stuff (loops, functions) with the assembler**
+**目标：学会使用汇编编写基本的循环、函数**
 
-We are close to our definitive boot sector.
+我们离目标已经很近了。
 
-In lesson 7 we will start reading from the disk, which is the last step before
-loading a kernel. But first, we will write some code with control structures,
-function calling, and full strings usage. We really need to be comfortable with
-those concepts before jumping to the disk and the kernel.
-
+在第7课中我们将开始从磁盘读取数据，这是加载内核之前的最后一步，但是首先我们要学习一下编写一些带有控制结构、函数调用和完整字符串使用的代码。在跳到磁盘和内核之前，我们需要熟悉这些概念。
 
 Strings
 -------
 
-Define strings like bytes, but terminate them with a null-byte (yes, like C)
-to be able to determine their end.
+像定义字节一样定义字符串，但是用一个空字节结尾（类似于C语言的字符串结尾），这样方便我们判定一个字符串是否结束了。
 
 ```nasm
 mystring:
     db 'Hello, World', 0
 ```
 
-Notice that text surrounded with quotes is converted to ASCII by the assembler,
-while that lone zero will be passed as byte `0x00` (null byte)
+请注意，用`''`括起来的文本被汇编器转换为ASCII码，而那个单独的零将作为字节`0x00`追加在末尾。  
 
-
-Control structures
+控制流程
 ------------------
 
-We have already used one: `jmp $` for the infinite loop.
+我们已经在无限循环中使用了一个:`jmp $`。  
 
-Assembler jumps are defined by the *previous* instruction result. For example:
+汇编将由由*前面的*指令结果定义跳转的目的地。举个例子：  
 
 ```nasm
 cmp ax, 4      ; if ax = 4
@@ -50,24 +42,22 @@ else:
 endif:
 ```
 
-Think in your head in high level, then convert it to assembler in this fashion.
+汇编是一段“字节流”，无论流到哪里都会继续往下流，而label只不过是一个助记符而已，实际上的实现方式就是在汇编的时候把label替换成地址。
 
-There are many `jmp` conditions: if equal, if less than, etc. They are pretty 
-intuitive but you can always Google them
+有许多`jmp`条件，比如JE（相等）、JNE（不等）、JG（大于）、JGE（大于或等于）、JL（小于）、JLE（小于或等于）。
 
 
-Calling functions
+调用函数
 -----------------
 
-As you may suppose, calling a function is just a jump to a label.
+如你所想，调用一个函数只是跳转到一个标签而已。
 
-The tricky part are the parameters. There are two steps to working with parameters:
+棘手的部分是参数，传入参数有两种方式:  
 
-1. The programmer knows they share a specific register or memory address
-2. Write a bit more code and make function calls generic and without side effects
+1. 程序员知道变量存放在哪一个具体的寄存器中。
+2. 在编写函数调用代码的时候麻烦一点但是不会导致意外。
 
-Step 1 is easy. Let's just agree that we will use `al` (actually, `ax`) for the parameters.
-
+第一种方式是十分简单的，让我们约定使用`al`寄存器(`ax`寄存器的低地址部分)来传参数，这样的话代码是下面这样的：
 ```nasm
 mov al, 'X'
 jmp print
@@ -81,55 +71,47 @@ print:
     jmp endprint  ; this label is also pre-agreed
 ```
 
-You can see that this approach will quickly grow into spaghetti code. The current
-`print` function will only return to `endprint`. What if some other function
-wants to call it? We are killing code reusage.
+你可以看到，这种方法将很快发展成一坨翔。当前的`print`函数将只能返回到`endprint`位置，如果其他函数想调用print函数就很难办了，这与软件工程里面的代码重用思想是背道而驰的。  
 
-The correct solution offers two improvements:
+正确的函数调用应该在此基础之上做出两处改进：
 
-- We will store the return address so that it may vary
-- We will save the current registers to allow subfunctions to modify them
-  without any side effects
+- 应该把返回地址存起来，因为每个返回地址（返回到调用此函数的位置）可能都不一样。
+- 我们将保存当前寄存器，以允许在函数修改它们而不产生任何副作用
 
-To store the return address, the CPU will help us. Instead of using a couple of
-`jmp` to call subroutines, use `call` and `ret`.
+我们不需要自己存储返回地址，CPU会帮助我们。我们也不需要使用`jmp`来调用函数了，取而代之的是`call`和`ret`。
 
-To save the register data, there is also a special command which uses the stack: `pusha`
-and its brother `popa`, which pushes all registers to the stack automatically and
-recovers them afterwards.
+CALL 指令调用一个过程，指挥处理器将当前的IP寄存器或CS和IP寄存器压入栈中，然后从新的内存地址开始执行。CS:IP两个寄存器指示了CPU当前将要读取的指令的地址，其中CS为代码段寄存器，而IP为指令指针寄存器 。
+
+过程使用RET（从过程返回）指令将处理器转回到该过程被调用的程序点上，其实实现的功能就是把CS和IP寄存器弹出栈。
+
+为了保存寄存器数据，还有一个使用堆栈的特殊命令:`pusha`和它的兄弟`popa`，`pusha`自动将所有寄存器推入堆栈，`popa`会恢复它们。 
 
 
-Including external files
+包含外部文件
 ------------------------
 
-I assume you are a programmer and don't need to convince you why this is
-a good idea.
+如果你是一个程序员，那你应该知道这是一个好习惯。 
 
-The syntax is
+语法是这样的：
 ```nasm
 %include "file.asm"
 ```
 
 
-Printing hex values
+以十六进制打印
 -------------------
 
 In the next lesson we will start reading from disk, so we need some way
 to make sure that we are reading the correct data. File `boot_sect_print_hex.asm`
 extends `boot_sect_print.asm` to print hex bytes, not just ASCII chars.
+在下一课中，我们将开始从磁盘读取数据，因此我们需要某种方法来确保读取的数据是正确的。`boot_sect_print_hex.asm`文件是`boot_sect_print.asm`的功能上的拓展。我们将使用`boot_sect_print_hex.asm`里面的程序来以十六进制的形式打印内容。
 
 
-Code! 
+代码解释
 -----
 
-Let's jump to the code. File `boot_sect_print.asm` is the subroutine which will
-get `%include`d in the main file. It uses a loop to print bytes on screen.
-It also includes a function to print a newline. The familiar `'\n'` is
-actually two bytes, the newline char `0x0A` and a carriage return `0x0D`. Please
-experiment by removing the carriage return char and see its effect.
+让我们来看看代码。`boot_sect_print.asm`是一个子程序，它将在主文件中被`%include`，文件里使用一个循环将字节打印到屏幕上，它还包含一个用于打印换行符的函数。我们熟悉的换行符`\n`实际上是两个字节，换行符`0x0A`和回车符`0x0D`。你也可以试着去掉回车字符，看看效果如何。
 
-As stated above, `boot_sect_print_hex.asm` allows for printing of bytes.
+如上所述，你可以利用`boot_sect_print_hex.asm`文件里的函数来打印字节的十六进制表示。
 
-The main file `boot_sect_main.asm` loads a couple strings and bytes,
-calls `print` and `print_hex` and hangs. If you understood
-the previous sections, it's quite straightforward.
+主文件`boot_sect_main.asm`作用是加载两个字符串，然后调用`print`和`print_hex`并挂起。 如果您理解了前面的部分，那么它是非常简单的。
