@@ -1,25 +1,17 @@
-*Concepts you may want to Google beforehand: segmentation*
+*你可能需要提前查询的概念：segmentation（段）*
 
-**Goal: learn how to address memory with 16-bit real mode segmentation**
+**目标：学习在16位实模式下如何使用段来定位内存**
 
-If you are comfortable with segmentation, skip this lesson.
+我们在第三个教程中用`org`进行了分段。Segmentation意味着你可以为你要用的所有数据地址指定额外的偏移量。
 
-We did segmentation
-with `[org]` on lesson 3. Segmentation means that you can specify
-an offset to all the data you refer to.
+Segmentation是通过使用特殊寄存器来完成的，这些寄存器有：`cs`，`ds`， `ss`和`es`，它们分别被用于代码段、数据段、栈段和其他用户自定义段。
 
-This is done by using special registers: `cs`, `ds`, `ss` and `es`, for
-Code, Data, Stack and Extra (i.e. user-defined)
+注意:他们是被CPU隐式使用的，所以一旦你设置了一些值，例如`ds`，那么你所有的内存访问将被`ds`偏移（具体偏移方式见下段文字描述）。[参考资料](http://wiki.osdev.org/Segmentation)  
 
-Beware: they are *implicitly* used by the CPU, so once you set some
-value for, say, `ds`, then all your memory access will be offset by `ds`.
-[Read more here](http://wiki.osdev.org/Segmentation)
+此外，为了计算真正的地址，我们不只是简单的把两个地址拼到一起，而是将它们进行*overlap*:`segment << 4 + address`。 例如，如果`ds`是`0x4d`，那么`[0x20]`实际上是指取出`0x4d0 + 0x20 = 0x4f0`里面的值。  
 
-Furthermore, to compute the real address we don't just join the two
-addresses, but we *overlap* them: `segment << 4 + address`. For example,
-if `ds` is `0x4d`, then `[0x20]` actually refers to `0x4d0 + 0x20 = 0x4f0`
+现在你可以去看一下代码了！
 
-Enough theory. Have a look at the code and play with it a bit.
+提示:我们不能对这些寄存器直接使用`mov`赋值，只能使用其他寄存器进行中转赋值。
 
-Hint: We cannot `mov` literals to those registers, we have to
-use a general purpose register before.
+我理解的段的作用就是：所有的汇编文件最终都会被编译到一个文件里面，在编译的时候不需要把每个文件里面使用到地址转换到全局绝对地址，只需要使用段寄存器加上相对偏移即可。
