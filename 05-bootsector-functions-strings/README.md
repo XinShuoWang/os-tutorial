@@ -101,10 +101,10 @@ CALL 指令调用一个过程，指挥处理器将当前的IP寄存器或CS和IP
 以十六进制打印
 -------------------
 
-In the next lesson we will start reading from disk, so we need some way
-to make sure that we are reading the correct data. File `boot_sect_print_hex.asm`
-extends `boot_sect_print.asm` to print hex bytes, not just ASCII chars.
 在下一课中，我们将开始从磁盘读取数据，因此我们需要某种方法来确保读取的数据是正确的。`boot_sect_print_hex.asm`文件是`boot_sect_print.asm`的功能上的拓展。我们将使用`boot_sect_print_hex.asm`里面的程序来以十六进制的形式打印内容。
+
+ROR是循环右移指令，把目的操作数整体右移由源操作数指定的位数，被移出的位依次回填到左边空出的位，同时移进标志位。
+举个例子：3转换成二进制数为：00000011，循环右移一位之后变成：10000001；再循环右移一位之后变成：11000000。
 
 
 代码解释
