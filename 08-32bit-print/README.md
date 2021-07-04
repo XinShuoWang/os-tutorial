@@ -1,31 +1,16 @@
-*Concepts you may want to Google beforehand: 32-bit protected mode, VGA, video 
-memory*
+*你可能需要查询的概念：32位保护模式、VGA、显示内存*
 
-**Goal: Print on the screen when on 32-bit protected mode**
+**目标：在32位保护模式中使用VGA打印字符**
 
-32-bit mode allows us to use 32 bit registers and memory addressing, 
-protected memory, virtual memory and other advantages, but we will lose
-BIOS interrupts and we'll need to code the GDT (more on this later)
+32位模式允许我们使用32位寄存器、虚拟内存等其他特性，但我们将不能使用BIOS中断，稍后可以通过编写GDT来代替。
 
-In this lesson we will write a new print string routine which works in
-32-bit mode, where we don't have BIOS interrupts, by directly manipulating
-the VGA video memory instead of calling `int 0x10`. The VGA memory starts
-at address `0xb8000` and it has a text mode which is useful to avoid
-manipulating direct pixels.
+在这个教程中，我们将编写一个新的打印字符串程序，它工作在32位模式下，在那里我们没有BIOS中断，通过直接操作VGA视频内存来实现打印，而不是使用`int 0x10`发起中断。 VGA内存从地址`0xb8000`开始，它有一个文本模式，这对避免直接操作像素点很有用。 
 
-
-The formula for accessing a specific character on the 80x25 grid is:
-
+80*25分辨率下某个像素点的内存是这样计算的：
 `0xb8000 + 2 * (row * 80 + col)`
 
-That is, every character uses 2 bytes (one for the ASCII, another for 
-color and such), and we see that the structure of the memory concatenates
-rows.
+也就是说，每个字符使用2个字节(一个用于ASCII，另一个用于颜色等)。 
 
-Open `32bit-print.asm` to see the code. It will always print the string
-on the top left of the screen, but soon we'll write higher level routines
-to replace it.
+现在我们来看看`32bit-print.asm`里面的代码。它的功能是在屏幕左上角打印字符串，但我们将在后续教程中编写更高级别的程序来替换它。 
 
-Unfortunately we cannot yet call this routine from the bootloader, because
-we still don't know how to write the GDT and enter protected mode. Once
-you have understood the code, jump to the next lesson.
+需要注意的是：我们还不能从bootsector中调用这个例程，因为我们仍然不知道如何编写GDT并进入保护模式。
