@@ -1,31 +1,17 @@
-*Concepts you may want to Google beforehand: GDT*
+*你可能需要事先查询的概念：Global Descriptor Table（GDT）*
 
-**Goal: program the GDT**
+**目标：编写GDT**
 
-Remember segmentation from lesson 6? The offset was left shifted
-to address an extra level of indirection.
+还记得第6课的segmentation吗？通过设置segmentation寄存器结合offset获得更大的寻址能力。  
 
-In 32-bit mode, segmentation works differently. Now, the offset becomes an
-index to a segment descriptor (SD) in the GDT. This descriptor defines
-the base address (32 bits), the size (20 bits) and some flags, like
-readonly, permissions, etc. To add confusion, the data structures are split,
-so open the os-dev.pdf file and check out the figure on page 34 or the 
-Wikipedia page for the GDT.
+在32位模式下，segmentation的工作方式不同。 现在，offset成为GDT中的索引，GDT是由段描述符(segment descriptor，SD)组成的数组，这个描述符定义了基地地址(32位)、大小(20位)和其它一些标志，如只读、权限等。前述的基址、大小等在SD中被切分存储，详情你可以查看os-dev.pdf文件的第34页上的图或GDT的Wikipedia页面。
 
-The easiest way to program the GDT is to define two segments, one for code
-and another for data. These can overlap which means there is no memory protection,
-but it's good enough to boot, we'll fix this later with a higher language.
+编写GDT的最简单方法是定义两个段，一个用于代码，另一个用于数据。 这些可能会重叠，这意味着没有内存保护，但这已经足够启动之用了，我们稍后将使用一种更高级的语言来修复这个问题。
 
-As a curiosity, the first GDT entry must be `0x00` to make sure that the
-programmer didn't make any mistakes managing addresses.
+出于规定，第一个GDT的字节必须是`0x00`，以确保程序员在管理地址时没有犯任何错误。  
 
-Furthermore, the CPU can't directly load the GDT address, but it requires
-a meta structure called the "GDT descriptor" with the size (16b) and address
-(32b) of our actual GDT. It is loaded with the `lgdt` operation.
+此外，CPU不能直接加载GDT的地址，它需要一个称为"GDT descriptor"的元结构来描述结构，元结构包含GDT的大小描述(16b)、GDT的地址描述(32b)，最后使用`lgdt`指令加载Global Descriptor Table。  
 
-Let's directly jump to the GDT code in assembly. Again, to understand
-all the segment flags, refer to the os-dev.pdf document. The theory for
-this lesson is quite complex.
+让我们直接跳到用汇编写得GDT代码。同样，要想理解SD里面标志的意思请参考os-dev.pdf文档。  
 
-In the next lesson we will make the switch to 32-bit protected mode
-and test our code from these lessons.
+在下一课中，我们将尝试着进入到32位保护模式！ 第8、9节的代码都将在第10节里被用到。 
