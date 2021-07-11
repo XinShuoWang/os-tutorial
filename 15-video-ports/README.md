@@ -1,27 +1,69 @@
-*Concepts you may want to Google beforehand: I/O ports*
+*你可能需要事先查询的概念：I/O接口*
 
-**Goal: Learn how to use the VGA card data ports**
+**目标：学会使用VGA数据接口**
 
-We will use C to communicate with devices via I/O registers and ports.
+我们将使用C语言来控制寄存器和接口以达成与设备通信的目的。
 
-Open `drivers/ports.c` and examine the inline C assembler syntax. It has
-some differences, like the order of the source and destination operands,
-and the funny syntax to assign variables to operands.
+打开`drivers/ports.c`你可以看到我们使用了很多C语言的内联汇编，它有一些区别，比如源操作数和目标操作数的顺序，以及将变量赋值给操作数的语法。
 
-When you understand the concepts, open `kernel/kernel.c` for an example
-of use.
+**内联汇编**
+用C写程序比直接用汇编写程序更简洁，可读性更好，但效率可能不如汇编程序，因为C程序毕竟要经由编译器生成汇编代码，尽管现代编译器的优化已经做得很好了，但还是不如手写的汇编代码。另外，有些平台相关的指令必须手写，在C语言中没有等价的语法，因为C语言的语法和概念是对各种平台的抽象，而各种平台特有的一些东西就不会在C语言中出现了，例如x86是端口I/O，而C语言就没有这个概念，所以in/out指令必须用汇编来写。
+C语言简洁易读，容易组织规模较大的代码，而汇编效率高，而且写一些特殊指令必须用汇编，为了把这两方面的好处都占全了，gcc提供了一种扩展语法可以在C代码中使用内联汇编（Inline Assembly）。最简单的格式是__asm__("assembly code");，例如__asm__("nop"); ，nop 这条指令什么都不做，只是让CPU空转一个指令执行周期。如果需要执行多条汇编指令，则应该用\n\t将各条指令分隔开，例如：
+```
+__asm__("movl $1, %eax\n\t"
+	    "movl $4, %ebx\n\t"
+	    "int $0x80");
+```
+通常 C 代码中的内联汇编需要和C的变量建立关联，需要用到完整的内联汇编格式：
+```
+__asm__(assembler template 
+	: output operands                  /* optional */
+	: input operands                   /* optional */
+	: list of clobbered registers      /* optional */
+	);
+```
+这种格式由四部分组成，第一部分是汇编指令，和上面的例子一样，第二部分和第三部分是约束条件，第二部分指示汇编指令的运算结果要输出到哪些C操作数中，C操作数应该是左值表达式，第三部分指示汇编指令需要从哪些C操作数获得输入，第四部分是在汇编指令中被修改过的寄存器列表，指示编译器哪些寄存器的值在执行这条__asm__语句时会改变。后三个部分都是可选的，如果有就填写，没有就空着只写个:号。例如：
 
-In this example we will examine the I/O ports which map the screen cursor
-position. Specifically, we will query port `0x3d4` with value `14` to request
-the cursor position high byte, and the same port with `15` for the low byte.
 
-When this port is queried, it saves the result in port `0x3d5`
+内联汇编举例
+```
+#include <stdio.h>
 
-Don't miss the opportunity to use `gdb` to inspect the value of C variables,
-since we still can't print them on the screen. To do so, set a breakpoint
-for a specific line, `breakpoint kernel.c:21` and use the `print` command
-to examine variables. Aren't you glad now that we invested some time in
-compiling the cross-compiled gdb? ;)
+int main() 
+{
+    int a = 10, b;
 
-Finally, we will use the queried cursor position to write a character
-at that location.
+	__asm__("movl %1, %%eax\n\t"
+		    "movl %%eax, %0\n\t"
+		    :"=r"(b)        /* output */
+		    :"r"(a)         /* input */
+		    :"%eax"         /* clobbered register */
+		    );
+	printf("Result: %d, %d\n", a, b);
+	return 0;
+}
+```
+这个程序将变量a的值赋给b。"r"(a)指示编译器分配一个寄存器保存变量a的值，作为汇编指令的输入，也就是指令中的%1（按照约束条件的顺序，b对应%0，a对应1%），至于%1究竟代表哪个寄存器则由编译器自己决定。汇编指令首先把%1所代表的寄存器的值传给eax（为了和%1这种占位符区分，eax前面要求加两个%号），然后把eax的值再传给%0所代表的寄存器。"=r"(b)就表示把%0所代表的寄存器的值输出给变量b。在执行这两条指令的过程中，寄存器eax的值被改变了，所以把"%eax"写在第四部分，告诉编译器在执行这条__asm__语句时eax要被改写，所以在此期间不要用eax保存其它值。
+我们看一下这个程序的反汇编结果：
+```
+        __asm__("movl %1, %%eax\n\t"
+ 80483dc:       8b 55 f8                mov    -0x8(%ebp),%edx
+ 80483df:       89 d0                   mov    %edx,%eax
+ 80483e1:       89 c2                   mov    %eax,%edx
+ 80483e3:       89 55 f4                mov    %edx,-0xc(%ebp)
+                "movl %%eax, %0\n\t"
+                :"=r"(b)        /* output */
+                :"r"(a)         /* input */
+                :"%eax"         /* clobbered register */
+                );
+```
+可见%0和%1都代表edx寄存器，首先把变量a（位于ebp-8的位置）的值传给edx然后执行内联汇编的两条指令，然后把edx的值传给b（位于ebp-12的位置）。
+
+注意点：
+1. 对于输出操作数一定要用`=`修饰。
+2. `%0`和`%1`分别代表传入的操作数，b对应%0，a对应1%，顺序是相反的。
+3. "r"(a)指示编译器分配一个寄存器保存变量a的值。
+
+当你懂了上述的概念，你就可以看`kernel/kernel.c`的例子了，在本例中，我们将通过I/O端口得到屏幕光标位置，具体来说，我们将`0x3d4`端口置为`14`来发送对光标的高字节位置的请求，而相同的端口`15`用于发送对低字节的请求，返回值被存放在`0x3d5`端口里。
+
+因为我们仍然不能在屏幕上打印它们，所以你可以使用`gdb`来进行调试，为此，你设置一个断点`breakpoint kernel.c:21`，并使用`print`命令来查看变量的值。我们在得到游标位置之后，将在该位置写入一个字符，而不是和前例一样在左上角打印字符`X`。  
