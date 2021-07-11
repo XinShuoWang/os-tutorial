@@ -1,58 +1,30 @@
-*Concepts you may want to Google beforehand: monolithic kernel, microkernel, debugger, gdb*
+*你可能需要事先百度的概念：宏内核、微内核、debugger、dgb*
 
-**Goal: Pause and organize our code a little bit. Then learn how to debug the kernel with gdb**
+**目标：重新组织一下代码，还要学习使用gdb来调试内核**
 
-Maybe you didn't realize it, but you already have your own kernel
-running!
-
-However, it does very little, just print an 'X'. Now is the time to stop for
-a moment and organize the code into folders, create a scalable Makefile for future code,
-and think on a strategy.
-
-Take a look at the new folder structure. Most of the files have been symlinked
-from previous lessons, so if we have to change them at some point, it will be
-a better idea to remove the symlink and create a new file.
-
-Furthermore, since from now on we will use mostly C to code, we'll take advantage of qemu's
-ability to open a connection to gdb. First, let's install a cross-compiled `gdb` since
-OSX uses `lldb` which is not compatible with the ELF file format (neither is the `gdb` available
-on Homebrew's repos)
+我们的内核功能目前很少，只是打印一个`X`。但是为了以后工程的简洁和编写`Makefile`的方便，现在是时候把代码归类放到文件夹里。因为从现在开始我们将主要使用C来编写代码，所以我们将使用gdb连接到qemu来进行调试，不过首先让我们安装一个交叉编译的`gdb`。  
 
 ```sh
 cd /tmp/src
 curl -O http://ftp.rediris.es/mirror/GNU/gdb/gdb-7.8.tar.gz
-tar xf gdb-7.8.tar.gz
-mkdir gdb-build
-cd gdb-build
-export PREFIX="/usr/local/i386elfgcc"
-export TARGET=i386-elf
-../gdb-7.8/configure --target="$TARGET" --prefix="$PREFIX" --program-prefix=i386-elf-
-make
-make install
+tar xf gdb-7.8.tar.gz && mkdir gdb-build && cd gdb-build
+../gdb-7.8/configure --ta rget="$TARGET" --prefix="$PREFIX" --program-prefix=i386-elf-
+make && sudo make install
 ```
 
-Check out the Makefile target `make debug`. This target uses builds `kernel.elf`, which
-is an object file (not binary) with all the symbols we generated on the kernel, thanks to
-the `-g` flag on gcc. Please examine it with `xxd` and you'll see some strings. Actually,
-the correct way to examine the strings in an object file is by `strings kernel.elf`
-
-We can take advantage of this cool qemu feature. Type `make debug` and, on the gdb shell:
-
-- Set up a breakpoint in `kernel.c:main()`: `b main`
-- Run the OS: `continue`
-- Run two steps into the code: `next` then `next`. You will see that we are just about to set
-  the 'X' on the screen, but it isn't there yet (check out the qemu screen)
-- Let's see what's in the video memory: `print *video_memory`. There is the 'L' from "Landed in
-  32-bit Protected Mode"
-- Hmmm, let's make sure that `video_memory` points to the correct address: `print video_memory`
-- `next` to put there our 'X'
-- Let's make sure: `print *video_memory` and look at the qemu screen. It's definitely there.
-
-Now is a good time to read some tutorial on `gdb` and learn super useful things like `info registers`
-which will save us a lot of time in the future!
+Makefile中有一个目标`debug`，这个目标可以构建出`kernel.elf`，这是一个目标文件(不是二进制文件)，包含了我们在内核中生成的所有符号，在gcc上开启`-g`参数就可以记录这些符号。你也可以使用`xxd`以16进制看一下里面的具体内容，你将会在里面看到一些字符串。实际上，检查对象文件中的字符串的正确方法是通过`strings kernel.elf`。  
 
 
-You may notice that, since this is a tutorial, we haven't yet discussed which kind
-of kernel we will write. It will probably be a monolithic one since they are easier
-to design and implement, and after all this is our first OS. Maybe in the future
-we'll add a lesson "15-b" with a microkernel design. Who knows.
+我们可以使用`make debug`命令开启调试，然后在`gdb`命令行上输入以下内容：
+- 在`kernel.c:main()`处打个断点: `b main`
+- 让操作系统运行起来: `continue`
+- 连续运行两步: `next`紧接着`next`. 你将会看到我们正要将`X`打印到屏幕上，但是在`qemu`上并没有开始打印。
+- 让我们看看在VGA内存里面有什么内容: `print *video_memory`，打印出的`L`来自于`Landed in 32-bit Protected Mode`
+- 让我们看看`video_memory`指向的地址: `print video_memory`
+- 使用`next`命令继续复制将`X`放入VGA内存
+- 让我们看看成功了没有: `print *video_memory`
+
+现在最好去学习一下GDB的用法，比如`info registers`命令，这将让我们省很多事。
+
+
+您可能会注意到，由于这是一个教程，我们还没有讨论我们将编写哪种内核，它可能是一个宏内核，因为它们更容易设计和实现，毕竟这是我们的第一个操作系统。
