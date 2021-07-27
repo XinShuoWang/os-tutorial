@@ -1,39 +1,13 @@
-*Concepts you may want to Google beforehand: CPU timer, keyboard interrupts, scancode*
+*你可能需要事先查询的概念：定时器、键盘中断、scancode*
 
-**Goal: Implement our first IRQ handlers: the CPU timer and the keyboard**
+**目标：实现CPU定时器和键盘输入处理程序**
 
-Everything is now ready to test our hardware interrupts.
-
-Timer
+定时器
 -----
 
-The timer is easy to configure. First we'll declare an `init_timer()` on `cpu/timer.h` and
-implement it on `cpu/timer.c`. It is just a matter of computing the clock frequency and
-sending the bytes to the appropriate ports.
+定时器很容易配置，首先我们将在`cpu/timer.h`中声明一个`init_timer()`函数，并在`cpu/timer.c`中实现，函数的功能也只是计算时钟频率并将字节发送到适当的端口。我们还要做的就是修复`kernel/utils.c`里面的`int_to_ascii()`函数，使其以正确的顺序打印数字，为此，我们需要实现`reverse()`和`strlen()`函数。最后，回到`kernel/kernel.c`并做两件事：再次启用中断、初始化计时器中断。这时候你就可以使用`make run`命令来看到效果了！
 
-We will now fix `kernel/utils.c int_to_ascii()` to print the numbers in the correct order.
-For that, we need to implement `reverse()` and `strlen()`.
-
-Finally, go back to the `kernel/kernel.c` and do two things. Enable interrupts again
-(very important!) and then initialize the timer interrupt.
-
-Go `make run` and you'll see the clock ticking!
-
-
-Keyboard
+键盘
 --------
 
-The keyboard is even easier, with a drawback. The PIC does not send us the ASCII code
-for the pressed key, but the scancode for the key-down and the key-up events, so we
-will need to translate those.
-
-Check out `drivers/keyboard.c` where there are two functions: the callback and
-the initialization which configures the interrupt callback. A new `keyboard.h` was
-created with the definitions.
-
-`keyboard.c` also has a long table to translate scancodes to ASCII keys. For the time
-being, we will only implement a simple subset of the US keyboard. You can read
-more [about scancodes here](http://www.win.tue.nl/~aeb/linux/kbd/scancodes-1.html)
-
-I don't know about you, but I'm thrilled! We are very close to building a simple shell.
-In the next chapter, we will expand a little bit on keyboard input
+键盘操作更简单，但有一个缺点：PIC并没有向我们发送按下键的ASCII码，而是发送“按下”和“松开”操作的的scancode，所以我们需要翻译它们。在`drivers/keyboard.c`文件中有两个函数：回调函数和配置中断回调的初始化函数。`keyboard.h`文件中放的是定义，`keyboard.c`中是函数实现，在其中有一个很长的`switch`匹配，它是用来将扫描码转换为ASCII码的。目前，我们将只实现美国键盘输入的一个简单子集，你可以在这里阅读更多关于[扫描码](http://www.win.tue.nl/~aeb/linux/kbd/scancodes-1.html)的内容。
