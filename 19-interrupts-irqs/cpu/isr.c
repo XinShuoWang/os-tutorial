@@ -43,16 +43,17 @@ void isr_install() {
     set_idt_gate(31, (u32)isr31);
 
     // Remap the PIC
-    port_byte_out(0x20, 0x11);
-    port_byte_out(0xA0, 0x11);
-    port_byte_out(0x21, 0x20);
-    port_byte_out(0xA1, 0x28);
-    port_byte_out(0x21, 0x04);
+    // ICW stands for "Initialization Commands Words"
+    port_byte_out(0x20, 0x11); /* write ICW1 to PICM, we are gonna write commands to PICM */
+    port_byte_out(0xA0, 0x11); /* write ICW1 to PICS, we are gonna write commands to PICS */
+    port_byte_out(0x21, 0x20); /* remap PICM to 0x20 (32 decimal) */
+    port_byte_out(0xA1, 0x28); /* remap PICS to 0x28 (40 decimal) */
+    port_byte_out(0x21, 0x04); /* IRQ2 -> connection to slave */ 
     port_byte_out(0xA1, 0x02);
-    port_byte_out(0x21, 0x01);
-    port_byte_out(0xA1, 0x01);
-    port_byte_out(0x21, 0x0);
-    port_byte_out(0xA1, 0x0); 
+    port_byte_out(0x21, 0x01); /* write ICW4 to PICM, we are gonna write commands to PICM */
+    port_byte_out(0xA1, 0x01); /* write ICW4 to PICS, we are gonna write commands to PICS */
+    port_byte_out(0x21, 0x0);  /* enable all IRQs on PICM */
+    port_byte_out(0xA1, 0x0);  /* enable all IRQs on PICS */
 
     // Install the IRQs
     set_idt_gate(32, (u32)irq0);
